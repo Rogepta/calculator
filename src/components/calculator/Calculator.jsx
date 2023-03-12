@@ -1,10 +1,12 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import "./calculator.css";
 import { btns, BTN_ACTIONS } from "./btbConfig";
 
 export const Calculator = () => {
   const btnsRef = useRef(null);
   const expRef = useRef(null);
+
+  const [expression, setExpression] = useState("");
 
   useEffect(() => {
     const btns = Array.from(btnsRef.current.querySelectorAll("button"));
@@ -20,6 +22,48 @@ export const Calculator = () => {
 
     if (item.action === BTN_ACTIONS.ADD) {
       addAnimSpan(item.display);
+
+      const oper = item.display !== "x" ? item.display : "*";
+      setExpression(expression + oper);
+    }
+
+    if (item.action === BTN_ACTIONS.DELETE) {
+      expDiv.parentNode.querySelector("div:last-child").innerHTML = "";
+      expDiv.innerHTML = "";
+
+      setExpression("");
+    }
+
+    if (item.action === BTN_ACTIONS.CALC) {
+      if (expression.trim().length <= 0) return;
+
+      expDiv.parentNode.querySelector("div:last-child").remove();
+
+      const cloneNode = expDiv.cloneNode(true);
+
+      expDiv.parentNode.appendChild(cloneNode);
+
+      const transform = `translateY(${
+        -(expDiv.offsetHeight + 10) + "px"
+      }) scale(0.4)`;
+
+      try {
+        let res = eval(expression);
+
+        setExpression(res.toString());
+        setTimeout(() => {
+          cloneNode.style.transform = transform;
+          expDiv.innerHTML = "";
+          addAnimSpan(Math.floor(res * 1000000) / 1000000);
+        }, 200);
+      } catch {
+        setTimeout(() => {
+          cloneNode.style.transform = transform;
+          cloneNode.innerHTML = "Syntax Error";
+        }, 200);
+      } finally {
+        console.log("calc complete");
+      }
     }
   };
 
@@ -33,10 +77,6 @@ export const Calculator = () => {
 
     const width = span.offsetWidth + "px";
     span.style.width = "0";
-
-    expDiv.parentNode.querySelector(
-      "div:last-child"
-    ).style.transform = `translateY(${-expDiv.offsetHeight + "px"}) scale(0.4)`;
 
     setTimeout(() => {
       span.style.opacity = "1";
